@@ -1,5 +1,8 @@
-bootloader/linker_script.ld
-runner
-bootloader/bootloader_ctx
-firmware
-linker_script.ld
+*.o
+*~
+*.d
+*.exe
+*.a
+obj_zoul
+*.zoul
+*.ld

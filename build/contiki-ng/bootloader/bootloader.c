@@ -6,8 +6,11 @@
 #include "contiki.h"
 #include "contiki-lib.h"
 
+#if defined(PLATFORM) && PLATFORM == srf06-cc26xx
 #include "driverlib/flash.h"
 #include "driverlib/vims.h"
+#endif
+
 #include "dev/watchdog.h"
 
 #include "common/libpull.h"
@@ -18,7 +21,7 @@
 #include "security/sha256.h"
 
 #include "bootloader.h"
-#include "../memory_headers.h"
+#include "../target_headers.h"
 #include "../default_configs.h"
 #include "../evaluator.h"
 
@@ -90,12 +93,14 @@ pull_error restore_recovery_image() {
     return GENERIC_ERROR;
 }
 
+#if defined(PLATFORM) && PLATFORM == srf06-cc26xx
 void flash_write_protect() {
     uint32_t page = 0;
     for (page=BOOTLOADER_START_PAGE; page<=IMAGE_END_PAGE; page++) {
         FlashProtectionSet(page, FLASH_WRITE_PROTECT);
     }
 }
+#endif
 
 version_t test_id = 0x0;
 DEFINE_EVALUATOR(local);

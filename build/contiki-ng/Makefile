@@ -12,7 +12,7 @@ all: ota
 # Accepted values: 0 1 2 3
 LOGGER_VERBOSITY ?= 0
 # Accepted values: TINYDTLS, CRYPTOAUTHLIB, TINYCRYPT
-SEC_LIB ?= CRYPTOAUTHLIB
+SEC_LIB ?= TINYDTLS
 # Accepted values: CONN_UDP, CONN_DTLS_PSK, CONN_DTLS_ECDSA
 CONN_TYPE ?= CONN_UDP
 # Evaluator

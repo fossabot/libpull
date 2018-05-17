@@ -14,11 +14,11 @@
 
 #include "default_configs.h"
 #include "transport/transport_ercoap.h"
-#include "memory_headers.h"
+#include "target_headers.h"
 
 #include "evaluator.h"
 
-#if TARGET == srf06-cc26xx
+#if defined(TARGET) & TARGET == srf06-cc26xx
 #include "driverlib/flash.h"
 #endif
 
@@ -113,12 +113,6 @@ void specialize_conn_functions() {
 #endif
 }
 
-#if EVALUATE_TIME == 1 || EVALUATE_ENERGY == 1
-#define TOSTR(token) #token
-version_t test_id = 0x0;
-DEFINE_EVALUATOR(local);
-DEFINE_EVALUATOR(global);
-
 #include "net/ipv6/uip-icmp6.h"
 static uip_ipaddr_t server_addr;
 static struct uip_icmp6_echo_reply_notification echo_reply_notification;
@@ -127,11 +121,16 @@ static uint8_t echo_reply = 0;
 static void echo_reply_handler(uip_ipaddr_t *source, uint8_t ttl, uint8_t *data, uint16_t datalen) {
     echo_reply++;
 }
+
+version_t test_id = 0x0;
+#if EVALUATE_TIME == 1 || EVALUATE_ENERGY == 1
+#define TOSTR(token) #token
+DEFINE_EVALUATOR(local);
+DEFINE_EVALUATOR(global);
 #endif
 
 PROCESS_THREAD(update_process, ev, data) {
     PROCESS_BEGIN();
-#if EVALUATE_TIME == 1 || EVALUATE_ENERGY == 1
     NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, 5);
     etimer_set(&et, (CLOCK_SECOND*15));
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
@@ -142,8 +141,7 @@ PROCESS_THREAD(update_process, ev, data) {
         etimer_set(&et, (CLOCK_SECOND/2 * (echo_reply == 0? 10:1)));
         PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
     } while(echo_reply <= 10);
-    printf("== TEST %d == SECLIB=" SEC_LIB_STR " CONN_TYPE=" CONN_TYPE_STR " ==\n", test_id);
-#endif
+    //printf("== TEST %d == SECLIB=" SEC_LIB_STR " CONN_TYPE=" CONN_TYPE_STR " ==\n", test_id);
     START_EVALUATOR(global);
     specialize_crypto_functions();
     specialize_conn_functions();
@@ -159,12 +157,16 @@ PROCESS_THREAD(update_process, ev, data) {
         // Check if there are updates
         log_info("Checking for updates\n");
         while (!sctx.has_updates) {
+            printf("1\n");
             check_updates(&sctx, subscriber_cb); // check for errors
+            printf("2\n");
             COAP_SEND(txp);
+            printf("3\n");
             if (!sctx.has_updates) {
-                etimer_set(&et, (CLOCK_SECOND/1));
+                etimer_set(&et, (CLOCK_SECOND*1));
                 PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
             }
+            printf("4\n");
         }
         EVALUATE_AND_RESTART(subscribe, local);
         // get the oldest slot
@@ -225,9 +227,8 @@ PROCESS_THREAD(update_process, ev, data) {
         }
 #endif
         START_EVALUATOR(local);
-        watchdog_stop();
+        watchdog_periodic();
         err = verify_object(&new_firmware, df, x, y, ef, buffer, BUFFER_LEN);
-        watchdog_start();
         STOP_EVALUATOR(local);
         PRINT_EVALUATOR(total_verify, local);
 #ifdef WITH_CRYPTOAUTHLIB
