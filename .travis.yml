@@ -8,6 +8,9 @@ addons:
       - srecord
       - gcovr
 
+before_install:
+  - pip install --user cpp-coveralls
+
 install:
   - ./autogen.sh
   - ./configure --enable-gcov
@@ -21,4 +24,4 @@ script:
   - make check
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -f '!test'
+    - coveralls --exclude ext --exclude test --gcov-options '\-lp'
